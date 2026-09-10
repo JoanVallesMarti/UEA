@@ -1807,47 +1807,94 @@ function t1Sub(key){
 }
 
 function fmtNoteDate(ts){ try{ return new Intl.DateTimeFormat('ca-ES',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}).format(new Date(ts)); }catch(e){ return ''; } }
+async function sha256hex(str){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 function initMister(){
   const box=document.getElementById('misterBox'); if(!box) return;
-  let pub={}; try{ pub=JSON.parse(document.getElementById('mister-note').textContent)||{}; }catch(e){}
+  const DB=window.UEA_DB;
   let loc={}; try{ loc=JSON.parse(localStorage.getItem('uea_mister')||'{}'); }catch(e){}
-  const hasPub=!!(pub.t&&pub.t.trim());
-  const draft=(loc.at||0)>(pub.at||0)?(loc.t||''):(pub.t||'');
-  box.innerHTML = `
-    <div class="mister-head"><span>⚽ LA PRÈVIA DEL PARTIT · PEL MISTER</span></div>
-    ${ hasPub ? `<div class="mister-pub"><p>${esc(pub.t)}</p><div class="mister-when">Publicada · ${fmtNoteDate(pub.at)}</div></div>` : '' }
-    <details class="mister-edit"${hasPub?'':' open'}>
-      <summary>${hasPub?'Edita la nota':'Escriu la nota del pròxim partit'}</summary>
-      <textarea id="misterTA" placeholder="Escriu la teva opinió sobre el pròxim partit…">${esc(draft)}</textarea>
-      <div class="mister-foot"><span id="misterMsg"></span><button id="misterPub">Publica</button></div>
-    </details>`;
-  const ta=box.querySelector('#misterTA'), btn=box.querySelector('#misterPub'), msg=box.querySelector('#misterMsg');
-  if((loc.at||0)>(pub.at||0)) msg.textContent='Esborrany desat en aquest dispositiu';
-  btn.onclick=async()=>{
-    const state={t:ta.value.trim(), at:Date.now()};
-    btn.disabled=true; msg.textContent='Publicant…';
-    let art=null;
-    try{ if(window.claude&&window.claude.use) art=await window.claude.use('artifact'); }catch(e){ art=null; }
-    if(art){
-      try{
-        const nu=JSON.stringify(state).replace(/</g,'\\u003c');
-        const html=CANON_HTML.replace(/<script type="application\/json" id="mister-note">[\s\S]*?<\/script>/,
-          '<script type="application/json" id="mister-note">'+nu+'<\/script>');
-        await art.publish(html);
-        msg.textContent='Nota publicada. Actualitzant…';
-        return;
-      }catch(e){
-        const c=e&&e.code;
-        if(c==='conflict'){ msg.textContent='La nota ha canviat en un altre dispositiu. Actualitzant…'; return; }
-        if(['not_writer','not_granted','not_declared','capability_disabled','consent_required'].indexOf(c)>=0){
-          misterSaveLocal(state); msg.textContent="Aquest dispositiu no té permís per publicar la nota per a tothom. S'ha desat aquí.";
-        } else { misterSaveLocal(state); msg.textContent="No s'ha pogut publicar ara. S'ha desat en aquest dispositiu."; }
+  let pub={}; try{ pub=JSON.parse(document.getElementById('mister-note').textContent)||{}; }catch(e){}
+
+  function paint(){
+    const hasPub=!!(pub.t&&pub.t.trim());
+    const newer=(loc.at||0)>(pub.at||0);
+    const draft=newer?(loc.t||''):(pub.t||'');
+    box.innerHTML = `
+      <div class="mister-head"><span>⚽ LA PRÈVIA DEL PARTIT</span></div>
+      ${ hasPub ? `<div class="mister-pub"><p>${esc(pub.t)}</p><div class="mister-when">Publicada · ${fmtNoteDate(pub.at)}</div></div>` : '' }
+      <details class="mister-edit"${hasPub?'':' open'}>
+        <summary>${hasPub?'Edita la nota':'Escriu la nota del pròxim partit'}</summary>
+        <textarea id="misterTA" placeholder="Escriu la teva opinió sobre el pròxim partit…">${esc(draft)}</textarea>
+        <div class="mister-foot"><span id="misterMsg"></span><button id="misterPub">Publica</button></div>
+      </details>`;
+    const ta=box.querySelector('#misterTA'), btn=box.querySelector('#misterPub'), msg=box.querySelector('#misterMsg');
+    if(newer) msg.textContent='Esborrany desat en aquest dispositiu';
+    btn.onclick=async()=>{
+      const state={t:ta.value.trim(), at:Date.now()};
+      if(!state.t){ msg.textContent='Escriu alguna cosa primer.'; return; }
+      btn.disabled=true; msg.textContent='Publicant…';
+
+      // 1) propietari de l'artifact a claude.ai
+      let art=null;
+      try{ if(window.claude&&window.claude.use) art=await window.claude.use('artifact'); }catch(e){ art=null; }
+      if(art){
+        try{
+          const nu=JSON.stringify(state).replace(/</g,'\\u003c');
+          const html=CANON_HTML.replace(/<script type="application\/json" id="mister-note">[\s\S]*?<\/script>/,
+            '<script type="application/json" id="mister-note">'+nu+'<\/script>');
+          await art.publish(html);
+          msg.textContent='Nota publicada. Actualitzant…';
+          return;
+        }catch(e){
+          const c=e&&e.code;
+          if(c==='conflict'){ msg.textContent='La nota ha canviat en un altre dispositiu. Actualitzant…'; return; }
+          if(['not_writer','not_granted','not_declared','capability_disabled','consent_required'].indexOf(c)<0){
+            misterSaveLocal(state); msg.textContent="No s'ha pogut publicar ara. S'ha desat en aquest dispositiu."; btn.disabled=false; return;
+          }
+          // sense permís d'artifact → provem Firebase a sota
+        }
       }
-    } else {
-      misterSaveLocal(state); msg.textContent="Aquesta còpia no permet publicar. La nota s'ha desat en aquest dispositiu.";
-    }
-    btn.disabled=false;
-  };
+
+      // 2) Firebase compartit (app autoallotjada) — cal el codi de publicació
+      if(DB){
+        let code=''; try{ code=localStorage.getItem('uea_previa_k')||''; }catch(e){}
+        if(!code) code=(window.prompt('Codi per publicar la prèvia (només el míster el té):')||'').trim();
+        if(!code){ btn.disabled=false; msg.textContent='Publicació cancel·lada.'; return; }
+        let hash='';
+        try{ hash=await sha256hex(code); }catch(e){ btn.disabled=false; msg.textContent="Aquest navegador no permet publicar aquí."; return; }
+        try{
+          await DB.ref('previa/primer').set({t:state.t.slice(0,2000), at:firebase.database.ServerValue.TIMESTAMP, c:hash});
+          try{ localStorage.setItem('uea_previa_k', code); }catch(e){}
+          msg.textContent='Prèvia publicada per a tothom.';
+          btn.disabled=false;
+          return;
+        }catch(e){
+          try{ localStorage.removeItem('uea_previa_k'); }catch(_){}
+          btn.disabled=false;
+          msg.textContent='Codi incorrecte, o encara no s’han configurat les regles. Torna-ho a provar.';
+          return;
+        }
+      }
+
+      // 3) sense res: només aquest dispositiu
+      misterSaveLocal(state);
+      msg.textContent="Aquesta còpia no permet publicar. La nota s'ha desat en aquest dispositiu.";
+      btn.disabled=false;
+    };
+  }
+
+  paint();
+
+  if(DB){
+    try{
+      DB.ref('previa/primer').on('value', s=>{
+        const v=s.val();
+        if(v&&v.t){ pub={t:v.t, at:v.at||0}; paint(); }
+      }, ()=>{});
+    }catch(e){}
+  }
 }
 function misterSaveLocal(state){ try{ localStorage.setItem('uea_mister', JSON.stringify(state)); }catch(e){} }
 
