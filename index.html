@@ -14,6 +14,7 @@
 <meta name="application-name" content="U.E. Aldeana">
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
 <script>
 try{
   firebase.initializeApp({
@@ -821,6 +822,7 @@ try{
             </div>
           </header>
           <button class="ig-follow" data-go="mes:xarxes" id="igFollow"></button>
+          <button class="ig-follow" id="pushToggle" hidden></button>
           <div id="newsList"></div>
           <p id="newsSync" style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;font-weight:500"></p>
         </section>
@@ -924,6 +926,7 @@ const I = {
   clipboard:'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h4"/>',
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16Z"/><path d="m14 5 4 4"/>',
   heart:'<path d="M12 20s-7-4.4-9.4-8.8A5.4 5.4 0 0 1 12 5a5.4 5.4 0 0 1 9.4 6.2C19 15.6 12 20 12 20Z"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
   network:'<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="m8.4 10.8 7.2-3.4M8.4 13.2l7.2 3.4"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   shield:'<path d="M12 3 20 6v6c0 5-3.5 7.6-8 9-4.5-1.4-8-4-8-9V6l8-3Z"/>',
@@ -1149,6 +1152,44 @@ function renderEquips(){
 }
 
 /* ============ RENDER: NOTÍCIES ============ */
+function initPush(){
+  var b=document.getElementById('pushToggle'); if(!b) return;
+  var VAPID='BEEdg60jALsIzRX9qq9DN4VABgdAJKY0GymUvnOKtIEpK7vyGvY75gmkUnTs4equHGBnn3N50QHwfzm5N2F18J0';
+  var ok = !!(window.UEA_DB && window.firebase && firebase.messaging && ('Notification' in window)
+             && ('serviceWorker' in navigator) && window.isSecureContext);
+  if(!ok) return;
+  b.hidden=false;
+  function paint(){
+    var granted = Notification.permission==='granted' && localStorage.getItem('uea_push')==='1';
+    var denied  = Notification.permission==='denied';
+    b.innerHTML = svg('bell')
+      + '<span><b>'+(granted?'Avisos de not\u00edcies activats':'Rep avisos de not\u00edcies')+'</b>'
+      + '<span>'+(granted ? 'Rebr\u00e0s un av\u00eds al m\u00f2bil quan publiquem'
+                 : denied ? 'Les notificacions estan bloquejades al navegador'
+                 : 'Toca per rebre un av\u00eds quan hi hagi novetats')+'</span></span>'
+      + (granted?'<span class="go">'+svg('chev')+'</span>':'');
+    b.style.opacity = (granted||denied)?'.7':'1';
+  }
+  b.onclick=async function(){
+    if(Notification.permission==='denied'){ paint(); return; }
+    b.disabled=true;
+    try{
+      var perm = await Notification.requestPermission();
+      if(perm==='granted'){
+        var reg = await navigator.serviceWorker.register('sw.js');
+        await navigator.serviceWorker.ready;
+        var tok = await firebase.messaging().getToken({vapidKey:VAPID, serviceWorkerRegistration:reg});
+        if(tok){
+          await window.UEA_DB.ref('push_tokens/'+tok.replace(/[^A-Za-z0-9_-]/g,'_')).set(tok);
+          localStorage.setItem('uea_push','1');
+        }
+      }
+    }catch(e){}
+    b.disabled=false; paint();
+  };
+  paint();
+}
+
 function renderNews(){
   document.getElementById('newsList').innerHTML = NEWS.map(n=>`
     <button class="news" data-go="article:${n.id}">
@@ -2071,6 +2112,7 @@ renderInici();
 renderEquips();
 renderNews();
 renderSoci();
+initPush();
 
 (function(){
   var sp=document.getElementById('splash'); if(!sp) return;

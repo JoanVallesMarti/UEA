@@ -1,6 +1,17 @@
-// U.E. Aldeana - service worker
-// Puja el numero de versio cada cop que actualitzis l'app perque els mobils
-// que ja la tenen instal\u00b7lada rebin la versio nova.
+// U.E. Aldeana - service worker: cau offline + notificacions push (FCM).
+// Puja el numero de CACHE cada cop que canvii l'app.
+importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js');
+try {
+  firebase.initializeApp({
+    apiKey: 'AIzaSyC1kULqPKqRx6GkOdekDcpeNUttzw-O8so',
+    projectId: 'uealdeana-929a8',
+    messagingSenderId: '233333506339',
+    appId: '1:233333506339:web:82d0dd792f4ae70d3f8c96'
+  });
+  firebase.messaging();   // mostra les notificacions rebudes en segon pla
+} catch (e) {}
+
 const CACHE = 'uea-v1';
 const CORE = [
   './',
