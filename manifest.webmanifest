@@ -5,12 +5,11 @@
   "lang": "ca",
   "start_url": "./",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#04070f",
   "theme_color": "#04070f",
   "display_override": [
-    "fullscreen",
     "standalone",
     "minimal-ui"
   ],
