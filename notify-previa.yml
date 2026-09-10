@@ -1,0 +1,30 @@
+name: Avisa de la prèvia (push)
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-previa
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install --quiet firebase-admin
+
+      - name: Comprova la prèvia i envia el push si és nova
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          SITE_URL: "https://uea-d1zy.vercel.app"
+        run: python scripts/notify_previa.py
