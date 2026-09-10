@@ -1,0 +1,35 @@
+name: Actualitza dades (FCF)
+
+on:
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-dades
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Actualitza index.html des de la FCF
+        run: python scripts/update.py
+      - name: Publica els canvis
+        run: |
+          git config user.name "UEA bot"
+          git config user.email "aldeana1968@gmail.com"
+          if git diff --quiet -- index.html; then
+            echo "Sense canvis avui."
+          else
+            git add index.html
+            git commit -m "Dades FCF"
+            git push
+          fi
