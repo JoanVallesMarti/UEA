@@ -598,15 +598,15 @@ try{
   .t1-hf{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:999px;padding:3px 9px}
   .t1-hf.casa{background:var(--yellow);color:#0b1b3a}
   .t1-hf.fora{background:rgba(255,255,255,.14);color:#c3cee5}
-  .t1-actions{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:16px}
+  .t1-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:16px}
   .t1-btn.wide{grid-column:1 / -1}
-  .t1-btn{display:flex;align-items:center;gap:12px;background:linear-gradient(160deg,var(--surface),var(--surface-2));border:1px solid var(--hairline);border-radius:17px;padding:14px 12px;text-decoration:none;color:var(--ink);transition:transform .12s;text-align:left}
+  .t1-btn{display:flex;align-items:center;gap:11px;min-width:0;background:linear-gradient(160deg,var(--surface),var(--surface-2));border:1px solid var(--hairline);border-radius:17px;padding:14px 12px;text-decoration:none;color:var(--ink);transition:transform .12s;text-align:left}
   .t1-btn:active{transform:translateY(1px)}
-  .t1-ic{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(150deg,rgba(255,210,74,.2),rgba(255,210,74,.05));border:1px solid rgba(255,210,74,.28)}
-  .t1-ic svg{width:20px;height:20px;color:var(--yellow)}
-  .t1-lb{display:flex;flex-direction:column;gap:2px;min-width:0}
-  .t1-lb b{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.3px;line-height:1}
-  .t1-lb i{font-style:normal;font-size:10.5px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t1-ic{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(150deg,rgba(255,210,74,.2),rgba(255,210,74,.05));border:1px solid rgba(255,210,74,.28)}
+  .t1-ic svg{width:19px;height:19px;color:var(--yellow)}
+  .t1-lb{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .t1-lb b{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:14.5px;text-transform:uppercase;letter-spacing:.3px;line-height:1.05;overflow-wrap:break-word}
+  .t1-lb i{font-style:normal;font-size:10.5px;color:var(--muted);font-weight:500;line-height:1.3;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   /* classificacio table */
   .t1-table{border:1px solid var(--hairline);border-radius:14px;overflow:hidden;background:var(--surface)}
   .t1-tr{display:grid;grid-template-columns:26px 1fr 26px 40px 34px;align-items:center;gap:6px;padding:9px 12px;font-size:13px;color:var(--ink)}
