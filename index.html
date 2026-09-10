@@ -1814,7 +1814,7 @@ function initMister(){
   const hasPub=!!(pub.t&&pub.t.trim());
   const draft=(loc.at||0)>(pub.at||0)?(loc.t||''):(pub.t||'');
   box.innerHTML = `
-    <div class="mister-head"><span>⚽ LA PRÈVIA DEL PARTIT</span></div>
+    <div class="mister-head"><span>⚽ LA PRÈVIA DEL PARTIT · PEL MISTER</span></div>
     ${ hasPub ? `<div class="mister-pub"><p>${esc(pub.t)}</p><div class="mister-when">Publicada · ${fmtNoteDate(pub.at)}</div></div>` : '' }
     <details class="mister-edit"${hasPub?'':' open'}>
       <summary>${hasPub?'Edita la nota':'Escriu la nota del pròxim partit'}</summary>
