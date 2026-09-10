@@ -12,18 +12,15 @@ try {
   firebase.messaging();   // mostra les notificacions rebudes en segon pla
 } catch (e) {}
 
-const CACHE = 'uea-v1';
-const CORE = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png'
-];
+const CACHE = 'uea-v2';
+const CORE = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.all(CORE.map(u => c.add(u).catch(() => {}))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
