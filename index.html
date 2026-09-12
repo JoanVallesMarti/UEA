@@ -470,10 +470,10 @@ try{
   .art-hero{height:200px;border-radius:20px;margin-bottom:14px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:14px}
   .art-full{position:relative;margin:0 -16px 16px;background:#0a1a3c;overflow:hidden}
   .art-full img{width:100%;height:auto;display:block}
-  .art-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .art-carousel{display:flex;height:230px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .art-carousel::-webkit-scrollbar{display:none}
-  .art-slide{flex:none;width:100%;scroll-snap-align:start}
-  .art-slide img{width:100%;height:auto;display:block}
+  .art-slide{flex:none;width:100%;height:100%;scroll-snap-align:start}
+  .art-slide img{width:100%;height:100%;object-fit:cover;display:block}
   .art-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:6px;z-index:1}
   .art-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);transition:width .2s,background .2s}
   .art-dots span.on{background:var(--yellow);width:16px;border-radius:3px}
