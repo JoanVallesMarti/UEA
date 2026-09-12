@@ -772,6 +772,15 @@ try{
   .radio-ep.is-active .re-ic{background:var(--yellow);color:#0b1b3a}
   .lottery-ticket{margin:2px 0 4px;border-radius:14px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35)}
   .lottery-ticket svg{width:100%;height:auto;display:block}
+  .np-pick{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--surface);border:1px dashed var(--hairline);border-radius:14px;padding:13px;color:var(--ink);font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;font-size:13px;letter-spacing:.3px;text-transform:uppercase}
+  .np-pick svg{width:16px;height:16px;color:var(--yellow)}
+  .np-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .np-thumb{position:relative;width:64px;height:64px;border-radius:11px;overflow:hidden;border:1px solid var(--hairline)}
+  .np-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .np-thumb button{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(4,7,15,.75);color:#fff;display:grid;place-items:center;transform:rotate(45deg)}
+  .np-thumb button svg{width:10px;height:10px}
+  .np-input,.np-textarea{display:block;width:100%;background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:11px 12px;color:var(--ink);font:inherit;font-size:14px;line-height:1.5}
+  .np-textarea{min-height:120px;resize:vertical}
   .soci-go{flex:none;width:16px;height:16px;color:var(--muted)}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -860,6 +869,7 @@ try{
           </header>
           <button class="ig-follow" data-go="mes:xarxes" id="igFollow"></button>
           <button class="ig-follow" id="pushToggle" hidden></button>
+          <button class="ig-follow" data-go="newsnew" id="newsPublishBtn"></button>
           <div id="newsList"></div>
           <p id="newsSync" style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;font-weight:500"></p>
         </section>
@@ -1223,6 +1233,7 @@ function initPush(){
   b.onclick=async function(){
     if(Notification.permission==='denied'){ paint(); return; }
     b.disabled=true;
+    var err='';
     try{
       var perm = await Notification.requestPermission();
       if(perm==='granted'){
@@ -1232,16 +1243,41 @@ function initPush(){
         if(tok){
           await window.UEA_DB.ref('push_tokens/'+tok.replace(/[^A-Za-z0-9_-]/g,'_')).set(tok);
           localStorage.setItem('uea_push','1');
-        }
-      }
-    }catch(e){}
+        } else { err='No s’ha pogut generar el codi del dispositiu.'; }
+      } else if(perm==='denied'){ err='Has bloquejat els avisos per a aquesta app.'; }
+    }catch(e){ err='Error: '+(e&&e.message?e.message:e); }
     b.disabled=false; paint();
+    if(err){ var s2=b.querySelector('span span'); if(s2) s2.textContent=err; }
   };
   paint();
 }
 
+let LIVE_NEWS=[];
+function loadLiveNews(){
+  if(!window.UEA_DB || loadLiveNews._done) return;
+  loadLiveNews._done=true;
+  try{
+    window.UEA_DB.ref('news_live').limitToLast(30).on('value', snap=>{
+      const v=snap.val()||{};
+      const items=Object.keys(v).map(k=>{
+        const it=v[k]||{};
+        const photos=[]; for(let i=0;i<6;i++){ if(it['img'+i]) photos.push(it['img'+i]); }
+        const body=String(it.body||'').split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
+        let dateTxt=''; try{ dateTxt=new Intl.DateTimeFormat('ca-ES',{day:'numeric',month:'long',year:'numeric'}).format(new Date(it.at||Date.now())); }catch(e){}
+        return { id:'live-'+k, tag:'Comunicat', hue:210, fit:'full', date:dateTxt, _at:it.at||0,
+          title: it.title||'Comunicat del club',
+          excerpt: String(it.body||'').slice(0,140),
+          body: body.length?body:[String(it.body||'')],
+          img: photos[0], photos };
+      });
+      items.sort((a,b)=>(b._at||0)-(a._at||0));
+      LIVE_NEWS=items;
+      renderNews();
+    }, ()=>{});
+  }catch(e){}
+}
 function renderNews(){
-  document.getElementById('newsList').innerHTML = NEWS.map(n=>`
+  document.getElementById('newsList').innerHTML = LIVE_NEWS.concat(NEWS).map(n=>`
     <button class="news" data-go="article:${n.id}">
       <div class="thumb" style="${newsStyle(n)}">${newsMedia(n,124)}<span class="lbl">${n.tag}</span></div>
       <div class="body">
@@ -1467,11 +1503,13 @@ function matchCardPlain(m){
 }
 
 function articleView(id){
-  const n=NEWS.find(x=>String(x.id)===String(id)); if(!n) return;
+  const n=NEWS.find(x=>String(x.id)===String(id)) || LIVE_NEWS.find(x=>String(x.id)===String(id));
+  if(!n) return;
   const isIg=n.url&&/instagram\.com/.test(n.url);
   const link=n.url?`<a class="art-source" href="${n.url}" target="_blank" rel="noopener">${isIg?'Veure la publicació a Instagram':'Llegeix-ho a uealdeana.com'} ${svg('chev')}</a>`:'';
+  const photos = n.photos&&n.photos.length ? n.photos : (n.img?[n.img]:[]);
   const hero = n.fit==='full'
-    ? `<div class="art-full">${n.img?`<img src="${n.img}" alt="">`:''}<span class="lbl">${n.tag}</span></div>`
+    ? `<div class="art-full">${photos.map(p=>`<img src="${p}" alt="">`).join('')}<span class="lbl">${n.tag}</span></div>`
     : `<div class="art-hero" style="${newsStyle(n)}">${newsMedia(n,170)}<span class="lbl">${n.tag}</span></div>`;
   return `
     <div class="art">
@@ -1481,6 +1519,86 @@ function articleView(id){
       ${n.body.map(p=>`<p>${p}</p>`).join('')}
       ${link}
     </div>`;
+}
+
+function newsPublishView(){
+  return `
+    <div class="sp-hero">
+      <div class="sp-ic">${svg('pencil')}</div>
+      <h2>Publica una<br>notícia</h2>
+      <div class="sp-sub">Comparteix-ho amb tots els socis</div>
+    </div>
+    <p class="sp-lead">Escriu la notícia i, si vols, afegeix-hi fotos. En publicar-la sortirà a Notícies i s'enviarà un avís al mòbil de qui tingui les notificacions activades.</p>
+    <div class="sp-h3">Fotos (opcional, fins a 4)</div>
+    <input type="file" id="npFiles" accept="image/*" multiple hidden>
+    <button class="np-pick" id="npPickBtn" type="button">${svg('news')} Afegeix fotos</button>
+    <div class="np-thumbs" id="npThumbs"></div>
+    <div class="sp-h3">Títol</div>
+    <input class="np-input" id="npTitle" type="text" maxlength="90" placeholder="Títol de la notícia">
+    <div class="sp-h3">Text</div>
+    <textarea class="np-textarea" id="npBody" maxlength="1500" placeholder="Escriu el contingut de la notícia…"></textarea>
+    <div class="mister-foot" style="margin-top:16px"><span id="npMsg"></span><button class="radio-btn play" id="npPubBtn" type="button" style="width:auto;border-radius:999px;padding:12px 22px;gap:8px">${svg('bell')} Publica i avisa</button></div>`;
+}
+function initNewsPublish(){
+  const filesInp=document.getElementById('npFiles'), pickBtn=document.getElementById('npPickBtn'),
+        thumbs=document.getElementById('npThumbs'), titleInp=document.getElementById('npTitle'),
+        bodyInp=document.getElementById('npBody'), pubBtn=document.getElementById('npPubBtn'),
+        msg=document.getElementById('npMsg');
+  if(!pubBtn) return;
+  let images=[];
+  function paintThumbs(){
+    thumbs.innerHTML = images.map((src,i)=>`
+      <span class="np-thumb"><img src="${src}"><button type="button" data-i="${i}" aria-label="Elimina">${svg('plus')}</button></span>`).join('');
+    thumbs.querySelectorAll('button').forEach(b=>{
+      b.onclick=()=>{ images.splice(parseInt(b.dataset.i,10),1); paintThumbs(); };
+    });
+  }
+  function resizeFile(file){
+    return new Promise((resolve)=>{
+      const img=new Image(); const url=URL.createObjectURL(file);
+      img.onload=()=>{
+        const maxW=1000, sc=Math.min(1, maxW/img.naturalWidth);
+        const w=Math.round(img.naturalWidth*sc), h=Math.round(img.naturalHeight*sc);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        resolve(cv.toDataURL('image/jpeg',0.72));
+      };
+      img.onerror=()=>resolve(null);
+      img.src=url;
+    });
+  }
+  pickBtn.onclick=()=>filesInp.click();
+  filesInp.onchange=async()=>{
+    const room=4-images.length;
+    const files=Array.from(filesInp.files||[]).slice(0,Math.max(0,room));
+    for(const f of files){ const d=await resizeFile(f); if(d) images.push(d); }
+    filesInp.value='';
+    paintThumbs();
+  };
+  pubBtn.onclick=async()=>{
+    const title=(titleInp.value||'').trim(), body=(bodyInp.value||'').trim();
+    if(!title||!body){ msg.textContent='Escriu un títol i el text de la notícia.'; return; }
+    const DB=window.UEA_DB;
+    if(!DB){ msg.textContent='Aquesta còpia no permet publicar.'; return; }
+    let code=''; try{ code=localStorage.getItem('uea_previa_k')||''; }catch(e){}
+    if(!code) code=(window.prompt('Codi per publicar (el mateix de la prèvia):')||'').trim();
+    if(!code){ msg.textContent='Publicació cancel·lada.'; return; }
+    pubBtn.disabled=true; msg.textContent='Publicant…';
+    try{
+      const hash=await sha256hex(code);
+      const data={title:title.slice(0,90), body:body.slice(0,1500), at:firebase.database.ServerValue.TIMESTAMP, c:hash};
+      images.forEach((src,i)=>{ data['img'+i]=src; });
+      await DB.ref('news_live').push(data);
+      try{ localStorage.setItem('uea_previa_k', code); }catch(e){}
+      msg.textContent='Notícia publicada!';
+      titleInp.value=''; bodyInp.value=''; images=[]; paintThumbs();
+    }catch(e){
+      try{ localStorage.removeItem('uea_previa_k'); }catch(_){}
+      msg.textContent='Codi incorrecte, o sense connexió. Torna-ho a provar.';
+    }
+    pubBtn.disabled=false;
+  };
 }
 
 function mesView(key){
@@ -2011,6 +2129,7 @@ function go(target){
   else if(type==='tsub'){ subBack=()=>openSub(teamView(p[1])); openSub(teamSub(p[1],p[2])); if(p[2]==='xat') initXat(p[1]); }
   else if(type==='soci'){ const html=sociView(arg); if(html) openSub(html); if(arg==='radio') initRadio(); }
   else if(type==='article'){ openSub(articleView(arg)); }
+  else if(type==='newsnew'){ openSub(newsPublishView()); initNewsPublish(); }
   else if(type==='mes'){
     if(arg==='home'){ setTab('mes'); return; }
     const html=mesView(arg);
@@ -2043,10 +2162,10 @@ const RADIO_PROGRAM={
   liveUrl:'https://alacarta.imaginaradio.cat'
 };
 const RADIO_EPS=[
-  {label:'1a hora',date:'Diumenge, jornada de lliga',src:'https://enacast.com/imaginaradio/play_podcast/1978259.mp3'},
-  {label:'2a hora',date:'Diumenge, jornada de lliga',src:'https://enacast.com/imaginaradio/play_podcast/1978267.mp3'},
-  {label:'3a hora',date:'Diumenge, jornada de lliga',src:'https://enacast.com/imaginaradio/play_podcast/1978273.mp3'},
-  {label:'4a hora',date:'Diumenge, jornada de lliga',src:'https://enacast.com/imaginaradio/play_podcast/1978283.mp3'}
+  {label:'1a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978259.mp3'},
+  {label:'2a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978267.mp3'},
+  {label:'3a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978273.mp3'},
+  {label:'4a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978283.mp3'}
 ];
 const LOTTERY_TICKET_SVG='<svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Butlleti il lustratiu de la loteria de Nadal de l\'Aldeana, numero 27868"> <defs><clipPath id="tk"><rect x="1" y="1" width="318" height="148" rx="10"/></clipPath></defs> <g clip-path="url(#tk)">   <rect x="0" y="0" width="320" height="150" fill="#f6f1e2"/>   <rect x="0" y="0" width="320" height="30" fill="#0b1b3a"/>   <line x1="66" y1="0" x2="66" y2="150" stroke="#cdc2a2" stroke-width="2" stroke-dasharray="4 5"/>   <circle cx="32" cy="52" r="17" fill="#0b1b3a"/>   <path d="M32 43.5 L35.3 50.4 L42.8 51.2 L37.2 56.3 L38.8 63.8 L32 60 L25.2 63.8 L26.8 56.3 L21.2 51.2 L28.7 50.4 Z" fill="#ffd24a"/>   <text x="32" y="86" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="12" letter-spacing="1" fill="#0b1b3a" text-anchor="middle">UEA</text>   <text x="32" y="112" font-family="Barlow Semi Condensed, sans-serif" font-weight="600" font-size="8.5" fill="#8a8264" text-anchor="middle">Butlleti</text>   <text x="193" y="20" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="13.5" letter-spacing="1.6" fill="#ffd24a" text-anchor="middle">LOTERIA DE NADAL &#183; UEA</text>   <text x="193" y="80" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="42" letter-spacing="3" fill="#0b1b3a" text-anchor="middle">27868</text>   <text x="193" y="103" font-family="Barlow Semi Condensed, sans-serif" font-weight="600" font-size="9.5" letter-spacing="1" fill="#5a5340" text-anchor="middle">SORTEIG DE NADAL &#183; 22 DESEMBRE 2026</text>   <text x="193" y="128" font-family="Barlow Semi Condensed, sans-serif" font-weight="500" font-size="9.5" fill="#8a8264" text-anchor="middle">Comparteix sort amb l&#8217;Aldeana</text> </g> <rect x="1" y="1" width="318" height="148" rx="10" fill="none" stroke="#d8cdae" stroke-width="1.5"/> </svg>';
 let radioIdx=0;
@@ -2311,12 +2430,15 @@ document.getElementById('icCont').innerHTML=svg('phone');
 document.getElementById('icXar').innerHTML=svg('network');
 document.getElementById('igFollow').innerHTML =
   `${svg('network')}<span><b>Estigues al dia</b><span>A les nostres xarxes socials</span></span><span class="go">${svg('chev')}</span>`;
+document.getElementById('newsPublishBtn').innerHTML =
+  `${svg('pencil')}<span><b>Publica una notícia</b><span>Escriu-la i avisa a tots els socis</span></span><span class="go">${svg('chev')}</span>`;
 
 renderInici();
 renderEquips();
 renderNews();
 renderSoci();
 initPush();
+loadLiveNews();
 
 (function(){
   var sp=document.getElementById('splash'); if(!sp) return;
