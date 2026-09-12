@@ -732,11 +732,13 @@ try{
   .sp-cta{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--yellow);color:#0b1b3a;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.6px;border-radius:999px;padding:14px;margin-top:16px;text-decoration:none}
   .sp-cta:active{transform:scale(.99)}
   .sp-cta svg{width:16px;height:16px}
+  #radioLiveBtn.is-live-playing{background:#0b1b3a;color:var(--yellow);border:1px solid rgba(255,210,74,.5)}
   .sp-note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:11px;line-height:1.55}
   /* ---- radio ---- */
   .radio-hero{margin:0 -16px 16px;padding:24px 18px 22px;min-height:270px;background:linear-gradient(150deg,#12285c,#0a1836);color:#fff;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center}
   .radio-players{position:absolute;inset:0;pointer-events:none}
   .radio-players svg{width:100%;height:100%;display:block}
+  .radio-players img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
   .radio-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,12,28,.86) 0%,rgba(6,12,28,.62) 38%,rgba(6,12,28,.3) 68%,rgba(6,12,28,.55) 100%);pointer-events:none}
   .radio-logo{position:relative;width:76px;height:76px;border-radius:20px;overflow:hidden;margin:0 auto 12px;border:1px solid rgba(255,210,74,.4);box-shadow:0 8px 22px rgba(0,0,0,.35)}
   .radio-logo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -2161,6 +2163,7 @@ const RADIO_PROGRAM={
   programUrl:'https://alacarta.imaginaradio.cat/programs/tots-els-gols',
   liveUrl:'https://alacarta.imaginaradio.cat'
 };
+const RADIO_LIVE_SRC='https://relay.stream.enacast-cloud.com:30286/imaginaradioHD.mp3';
 const RADIO_EPS=[
   {label:'1a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978259.mp3'},
   {label:'2a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978267.mp3'},
@@ -2194,20 +2197,38 @@ function radioToggle(){
 function radioStop(){ const a=radioAudioEl(); if(!a) return; a.pause(); a.currentTime=0; radioPaint(); }
 function radioNext(){ radioLoad(radioIdx+1, radioAudioEl()&&!radioAudioEl().paused); }
 function radioPrev(){ radioLoad(radioIdx-1, radioAudioEl()&&!radioAudioEl().paused); }
+
+// Directe: reproductor totalment independent dels trams (el seu propi <audio>, el seu propi estat).
+function radioLiveEl(){ return document.getElementById('radioLiveAudio'); }
+function radioLivePaint(){
+  const btn=document.getElementById('radioLiveBtn'); if(!btn) return;
+  const a=radioLiveEl(), playing=a&&!a.paused;
+  btn.classList.toggle('is-live-playing',!!playing);
+  const lbl=btn.querySelector('.rl-txt'); if(lbl) lbl.textContent = playing?'En directe · en reproducció':'Escolta Imagina Ràdio en directe';
+  const ic=btn.querySelector('.rl-ic'); if(ic) ic.innerHTML = svg(playing?'pause':'radio');
+}
+function radioLiveToggle(){
+  const live=radioLiveEl(); if(!live) return;
+  if(live.paused){
+    if(!live.src) live.src=RADIO_LIVE_SRC;
+    const tram=radioAudioEl(); if(tram&&!tram.paused) tram.pause(); // no dues fonts sonant alhora
+    live.play().catch(()=>{});
+  } else { live.pause(); }
+}
 function initRadio(){
   const a=radioAudioEl(); if(!a) return;
   ['play','pause','ended'].forEach(ev=>a.addEventListener(ev,radioPaint));
+  const live=radioLiveEl();
+  if(live){ ['play','pause'].forEach(ev=>live.addEventListener(ev,radioLivePaint)); }
   const prevBtn=document.getElementById('radioPrevBtn'), stopBtn=document.getElementById('radioStopBtn'),
         playBtn=document.getElementById('radioPlayBtn'), nextBtn=document.getElementById('radioNextBtn'),
         liveBtn=document.getElementById('radioLiveBtn');
   if(prevBtn) prevBtn.onclick=radioPrev;
   if(stopBtn) stopBtn.onclick=radioStop;
-  if(playBtn) playBtn.onclick=radioToggle;
+  if(playBtn) playBtn.onclick=()=>{ const live2=radioLiveEl(); if(live2&&!live2.paused) live2.pause(); radioToggle(); };
   if(nextBtn) nextBtn.onclick=radioNext;
-  if(liveBtn) liveBtn.onclick=()=>{
-    radioLoad(RADIO_EPS.length-1,true);
-    document.querySelector('.radio-player')?.scrollIntoView({behavior:'smooth',block:'center'});
-  };
+  if(liveBtn) liveBtn.onclick=radioLiveToggle;
+  radioLivePaint();
   document.querySelectorAll('.radio-ep').forEach(el=>{
     el.onclick=()=>radioLoad(parseInt(el.dataset.idx,10),true);
   });
@@ -2256,7 +2277,8 @@ function sociView(key){
       </button>`).join('')}
     </div>
 
-    <button class="sp-cta" id="radioLiveBtn" type="button">${svg('radio')} Escolta Imagina Ràdio en directe</button>
+    <button class="sp-cta" id="radioLiveBtn" type="button"><span class="rl-ic">${svg('radio')}</span><span class="rl-txt">Escolta Imagina Ràdio en directe</span></button>
+    <audio id="radioLiveAudio" preload="none"></audio>
     <p class="sp-note">Contingut i àudio: Imagina Ràdio · Enacast.</p>`;
 
   if(key==='festeSoci') return `
