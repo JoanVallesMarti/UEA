@@ -739,7 +739,6 @@ try{
   .sp-cta{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--yellow);color:#0b1b3a;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.6px;border-radius:999px;padding:14px;margin-top:16px;text-decoration:none}
   .sp-cta:active{transform:scale(.99)}
   .sp-cta svg{width:16px;height:16px}
-  #radioLiveBtn.is-live-playing{background:#0b1b3a;color:var(--yellow);border:1px solid rgba(255,210,74,.5)}
   .sp-note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:11px;line-height:1.55}
   /* ---- radio ---- */
   .radio-hero{margin:0 -16px 16px;padding:24px 18px 22px;min-height:270px;background:linear-gradient(150deg,#12285c,#0a1836);color:#fff;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center}
@@ -770,6 +769,10 @@ try{
   .radio-btn:active{transform:scale(.94)}
   .radio-btn.play{width:60px;height:60px;background:var(--yellow);color:#0b1b3a;border:none}
   .radio-btn.play svg{width:26px;height:26px}
+  .radio-btn.live{position:relative}
+  .radio-btn.live::after{content:"";position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#c11f2e;border:1.5px solid var(--surface)}
+  .radio-btn.live.is-live-playing{background:#c11f2e;color:#fff;border-color:#c11f2e}
+  .radio-btn.live.is-live-playing::after{background:#fff;border-color:#c11f2e}
   .radio-eps{margin-top:4px}
   .radio-ep{display:flex;align-items:center;gap:11px;width:100%;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;padding:11px 12px;margin-bottom:8px;text-align:left;color:var(--ink)}
   .radio-ep .re-ic{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.25);color:var(--yellow)}
@@ -1276,7 +1279,7 @@ function loadLiveNews(){
         const photos=[]; for(let i=0;i<6;i++){ if(it['img'+i]) photos.push(it['img'+i]); }
         const body=String(it.body||'').split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
         let dateTxt=''; try{ dateTxt=new Intl.DateTimeFormat('ca-ES',{day:'numeric',month:'long',year:'numeric'}).format(new Date(it.at||Date.now())); }catch(e){}
-        return { id:'live-'+k, tag:'Comunicat', hue:210, fit:'full', date:dateTxt, _at:it.at||0,
+        return { id:'live-'+k, tag:it.tag||'Comunicat', hue:210, fit:'full', date:dateTxt, _at:it.at||0,
           title: it.title||'Comunicat del club',
           excerpt: String(it.body||'').slice(0,140),
           body: body.length?body:[String(it.body||'')],
@@ -1545,6 +1548,14 @@ function newsPublishView(){
       <div class="sp-sub">Comparteix-ho amb tots els socis</div>
     </div>
     <p class="sp-lead">Escriu la notícia i, si vols, afegeix-hi fotos. En publicar-la sortirà a Notícies i s'enviarà un avís al mòbil de qui tingui les notificacions activades.</p>
+    <div class="sp-h3">Etiqueta</div>
+    <select class="np-input" id="npTag">
+      <option value="Comunicat">Comunicat</option>
+      <option value="Club">Club</option>
+      <option value="Primer equip">Primer equip</option>
+      <option value="Femení">Femení</option>
+      <option value="Futbol base">Futbol base</option>
+    </select>
     <div class="sp-h3">Fotos (opcional, fins a 4)</div>
     <input type="file" id="npFiles" accept="image/*" multiple hidden>
     <button class="np-pick" id="npPickBtn" type="button">${svg('news')} Afegeix fotos</button>
@@ -1560,7 +1571,8 @@ function newsPublishView(){
 }
 function initNewsPublish(){
   const filesInp=document.getElementById('npFiles'), pickBtn=document.getElementById('npPickBtn'),
-        thumbs=document.getElementById('npThumbs'), titleInp=document.getElementById('npTitle'),
+        thumbs=document.getElementById('npThumbs'), tagInp=document.getElementById('npTag'),
+        titleInp=document.getElementById('npTitle'),
         bodyInp=document.getElementById('npBody'), pubBtn=document.getElementById('npPubBtn'),
         msg=document.getElementById('npMsg');
   if(!pubBtn) return;
@@ -1606,7 +1618,7 @@ function initNewsPublish(){
     pubBtn.disabled=true; msg.textContent='Publicant…';
     try{
       const hash=await sha256hex(code);
-      const data={title:title.slice(0,90), body:body.slice(0,1500), at:firebase.database.ServerValue.TIMESTAMP, c:hash};
+      const data={title:title.slice(0,90), body:body.slice(0,1500), tag:(tagInp&&tagInp.value)||'Comunicat', at:firebase.database.ServerValue.TIMESTAMP, c:hash};
       images.forEach((src,i)=>{ data['img'+i]=src; });
       await DB.ref('news_live').push(data);
       try{ localStorage.setItem('uea_previa_k', code); }catch(e){}
@@ -2197,15 +2209,20 @@ const RADIO_EPS=[
   {label:'4a hora',date:'6 de setembre de 2026',src:'https://enacast.com/imaginaradio/play_podcast/1978283.mp3'}
 ];
 const LOTTERY_TICKET_SVG='<svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Butlleti il lustratiu de la loteria de Nadal de l\'Aldeana, numero 27868"> <defs><clipPath id="tk"><rect x="1" y="1" width="318" height="148" rx="10"/></clipPath></defs> <g clip-path="url(#tk)">   <rect x="0" y="0" width="320" height="150" fill="#f6f1e2"/>   <rect x="0" y="0" width="320" height="30" fill="#0b1b3a"/>   <line x1="66" y1="0" x2="66" y2="150" stroke="#cdc2a2" stroke-width="2" stroke-dasharray="4 5"/>   <circle cx="32" cy="52" r="17" fill="#0b1b3a"/>   <path d="M32 43.5 L35.3 50.4 L42.8 51.2 L37.2 56.3 L38.8 63.8 L32 60 L25.2 63.8 L26.8 56.3 L21.2 51.2 L28.7 50.4 Z" fill="#ffd24a"/>   <text x="32" y="86" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="12" letter-spacing="1" fill="#0b1b3a" text-anchor="middle">UEA</text>   <text x="32" y="112" font-family="Barlow Semi Condensed, sans-serif" font-weight="600" font-size="8.5" fill="#8a8264" text-anchor="middle">Butlleti</text>   <text x="193" y="20" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="13.5" letter-spacing="1.6" fill="#ffd24a" text-anchor="middle">LOTERIA DE NADAL &#183; UEA</text>   <text x="193" y="80" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="42" letter-spacing="3" fill="#0b1b3a" text-anchor="middle">27868</text>   <text x="193" y="103" font-family="Barlow Semi Condensed, sans-serif" font-weight="600" font-size="9.5" letter-spacing="1" fill="#5a5340" text-anchor="middle">SORTEIG DE NADAL &#183; 22 DESEMBRE 2026</text>   <text x="193" y="128" font-family="Barlow Semi Condensed, sans-serif" font-weight="500" font-size="9.5" fill="#8a8264" text-anchor="middle">Comparteix sort amb l&#8217;Aldeana</text> </g> <rect x="1" y="1" width="318" height="148" rx="10" fill="none" stroke="#d8cdae" stroke-width="1.5"/> </svg>';
+// Un sol reproductor compartit per als trams I el directe (radioIdx val 0..N-1 per trams, 'live' pel directe)
+// perquè mai puguin sonar dues fonts alhora: només hi ha un <audio>.
 let radioIdx=0;
 function radioAudioEl(){ return document.getElementById('radioAudio'); }
 function radioPaint(){
-  const wave=document.getElementById('radioWave'), nowT=document.getElementById('radioNowT'), playBtn=document.getElementById('radioPlayBtn');
+  const wave=document.getElementById('radioWave'), nowT=document.getElementById('radioNowT'),
+        playBtn=document.getElementById('radioPlayBtn'), liveBtn=document.getElementById('radioLiveBtn');
   if(!wave) return;
   const a=radioAudioEl(), playing=a&&!a.paused&&!a.ended;
+  const isLive=radioIdx==='live';
   wave.classList.toggle('is-playing',!!playing);
-  if(nowT) nowT.textContent=RADIO_EPS[radioIdx].label;
+  if(nowT) nowT.textContent = isLive ? 'En directe' : RADIO_EPS[radioIdx].label;
   if(playBtn) playBtn.innerHTML=svg(playing?'pause':'play');
+  if(liveBtn) liveBtn.classList.toggle('is-live-playing', isLive&&playing);
   document.querySelectorAll('.radio-ep').forEach((el,i)=>el.classList.toggle('is-active',i===radioIdx));
 }
 function radioLoad(i,autoplay){
@@ -2215,46 +2232,32 @@ function radioLoad(i,autoplay){
   if(autoplay) a.play().catch(()=>{});
   radioPaint();
 }
+function radioLoadLive(autoplay){
+  radioIdx='live';
+  const a=radioAudioEl(); if(!a) return;
+  a.src=RADIO_LIVE_SRC;
+  if(autoplay) a.play().catch(()=>{});
+  radioPaint();
+}
 function radioToggle(){
   const a=radioAudioEl(); if(!a) return;
-  if(!a.src) radioLoad(radioIdx,false);
+  if(!a.src) radioLoad(0,false);
   if(a.paused||a.ended) a.play().catch(()=>{}); else a.pause();
 }
 function radioStop(){ const a=radioAudioEl(); if(!a) return; a.pause(); a.currentTime=0; radioPaint(); }
-function radioNext(){ radioLoad(radioIdx+1, radioAudioEl()&&!radioAudioEl().paused); }
-function radioPrev(){ radioLoad(radioIdx-1, radioAudioEl()&&!radioAudioEl().paused); }
-
-// Directe: reproductor totalment independent dels trams (el seu propi <audio>, el seu propi estat).
-function radioLiveEl(){ return document.getElementById('radioLiveAudio'); }
-function radioLivePaint(){
-  const btn=document.getElementById('radioLiveBtn'); if(!btn) return;
-  const a=radioLiveEl(), playing=a&&!a.paused;
-  btn.classList.toggle('is-live-playing',!!playing);
-  const lbl=btn.querySelector('.rl-txt'); if(lbl) lbl.textContent = playing?'En directe · en reproducció':'Escolta Imagina Ràdio en directe';
-  const ic=btn.querySelector('.rl-ic'); if(ic) ic.innerHTML = svg(playing?'pause':'radio');
-}
-function radioLiveToggle(){
-  const live=radioLiveEl(); if(!live) return;
-  if(live.paused){
-    if(!live.src) live.src=RADIO_LIVE_SRC;
-    const tram=radioAudioEl(); if(tram&&!tram.paused) tram.pause(); // no dues fonts sonant alhora
-    live.play().catch(()=>{});
-  } else { live.pause(); }
-}
+function radioNext(){ if(radioIdx==='live') return; radioLoad(radioIdx+1, radioAudioEl()&&!radioAudioEl().paused); }
+function radioPrev(){ if(radioIdx==='live') return; radioLoad(radioIdx-1, radioAudioEl()&&!radioAudioEl().paused); }
 function initRadio(){
   const a=radioAudioEl(); if(!a) return;
   ['play','pause','ended'].forEach(ev=>a.addEventListener(ev,radioPaint));
-  const live=radioLiveEl();
-  if(live){ ['play','pause'].forEach(ev=>live.addEventListener(ev,radioLivePaint)); }
   const prevBtn=document.getElementById('radioPrevBtn'), stopBtn=document.getElementById('radioStopBtn'),
         playBtn=document.getElementById('radioPlayBtn'), nextBtn=document.getElementById('radioNextBtn'),
         liveBtn=document.getElementById('radioLiveBtn');
   if(prevBtn) prevBtn.onclick=radioPrev;
   if(stopBtn) stopBtn.onclick=radioStop;
-  if(playBtn) playBtn.onclick=()=>{ const live2=radioLiveEl(); if(live2&&!live2.paused) live2.pause(); radioToggle(); };
+  if(playBtn) playBtn.onclick=radioToggle;
   if(nextBtn) nextBtn.onclick=radioNext;
-  if(liveBtn) liveBtn.onclick=radioLiveToggle;
-  radioLivePaint();
+  if(liveBtn) liveBtn.onclick=()=>radioLoadLive(true);
   document.querySelectorAll('.radio-ep').forEach(el=>{
     el.onclick=()=>radioLoad(parseInt(el.dataset.idx,10),true);
   });
@@ -2292,6 +2295,7 @@ function sociView(key){
         <button class="radio-btn" id="radioStopBtn" type="button" aria-label="Atura">${svg('stop')}</button>
         <button class="radio-btn play" id="radioPlayBtn" type="button" aria-label="Reprodueix / pausa">${svg('play')}</button>
         <button class="radio-btn" id="radioNextBtn" type="button" aria-label="Següent">${svg('skipf')}</button>
+        <button class="radio-btn live" id="radioLiveBtn" type="button" aria-label="En directe">${svg('radio')}</button>
       </div>
       <audio id="radioAudio" preload="none"></audio>
     </div>
@@ -2302,9 +2306,6 @@ function sociView(key){
         <span class="re-tx"><b>${e.label}</b><span>${e.date}</span></span>
       </button>`).join('')}
     </div>
-
-    <button class="sp-cta" id="radioLiveBtn" type="button"><span class="rl-ic">${svg('radio')}</span><span class="rl-txt">Escolta Imagina Ràdio en directe</span></button>
-    <audio id="radioLiveAudio" preload="none"></audio>
     <p class="sp-note">Contingut i àudio: Imagina Ràdio · Enacast.</p>`;
 
   if(key==='festeSoci') return `
