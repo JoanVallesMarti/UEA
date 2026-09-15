@@ -1018,7 +1018,7 @@ const FIELD='Estadi la Unió';
 
 const FCF_CLUB='https://www.fcf.cat/ca/clubs/3085';
 const FCF_TEAM='https://www.fcf.cat/ca/clubs/3085/categories/';
-const FIXTURES_UPDATED="2026-09-14";
+const FIXTURES_UPDATED="2026-09-15";
 
 /* Equips del club, de la categoria superior a la inferior.
    fcf = codi d'equip a la Federació Catalana de Futbol (per als enllaços). */
@@ -1046,6 +1046,7 @@ const MATCHES=[
   {catId:"primer",comp:"Segona Catalana · Jornada 1",home:CLUB,away:"CF Canonja",date:"2026-09-20",time:"12:00",venue:FIELD},
   {catId:"filial",comp:"Quarta Catalana · Jornada 1",home:CLUB,away:"CD Alcanar",date:"2026-09-19",time:"19:15",venue:FIELD},
   {catId:"femeni",comp:"Preferent Femenina · Jornada 1",home:"Pardinyes CF",away:CLUB,date:"2026-09-20",time:"12:00",venue:"Pardinyes"},
+  {catId:"femeniB",comp:"Segona Divisió · Jornada 1",home:CLUB,away:"CF Gandesa",date:"2026-10-03",time:"19:00",venue:FIELD},
   {catId:"alevi",comp:"Amistós",home:"CF Tortosa Ebre",away:CLUB,date:"2026-09-16",time:"17:45",venue:"Josep Otero"}
 ];
 function catName(id){const t=TEAMS.find(x=>x.id===id);return t?t.name:id;}
