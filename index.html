@@ -1018,7 +1018,7 @@ const FIELD='Estadi la Unió';
 
 const FCF_CLUB='https://www.fcf.cat/ca/clubs/3085';
 const FCF_TEAM='https://www.fcf.cat/ca/clubs/3085/categories/';
-const FIXTURES_UPDATED="2026-09-16";
+const FIXTURES_UPDATED="2026-09-17";
 
 /* Equips del club, de la categoria superior a la inferior.
    fcf = codi d'equip a la Federació Catalana de Futbol (per als enllaços). */
@@ -1049,8 +1049,10 @@ const MATCHES=[
   {catId:"femeniB",comp:"Amistós",home:CLUB,away:"Fundacio UCF Cambrils",date:"2026-09-20",time:"17:00",venue:FIELD},
   {catId:"juvenil",comp:"Amistós",home:CLUB,away:"CF la Senia",date:"2026-09-20",time:"15:00",venue:FIELD},
   {catId:"cadet",comp:"Amistós",home:CLUB,away:"CF Amposta",date:"2026-09-19",time:"15:00",venue:FIELD},
+  {catId:"infantil",comp:"Primera Divisió · Jornada 1",home:CLUB,away:"CE Olimpic Mora d'Ebre",date:"2026-10-03",time:"12:00",venue:FIELD},
   {catId:"infantil2",comp:"Amistós",home:CLUB,away:"CF Amposta",date:"2026-09-19",time:"17:00",venue:FIELD},
-  {catId:"alevi",comp:"Amistós",home:"CF Tortosa Ebre",away:CLUB,date:"2026-09-16",time:"17:45",venue:"Josep Otero"}
+  {catId:"alevi1",comp:"Amistós",home:"CD Roquetenc",away:CLUB,date:"2026-09-20",time:"10:00",venue:"Zem Roquetes"},
+  {catId:"alevi",comp:"Preferent · Jornada 1",home:CLUB,away:"CD la Floresta",date:"2026-09-19",time:"10:00",venue:FIELD}
 ];
 function catName(id){const t=TEAMS.find(x=>x.id===id);return t?t.name:id;}
 function fcfUrl(id){const t=TEAMS.find(x=>x.id===id);return t&&t.fcf?FCF_TEAM+t.fcf:FCF_CLUB;}
