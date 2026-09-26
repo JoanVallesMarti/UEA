@@ -1018,7 +1018,7 @@ const FIELD='Estadi la Unió';
 
 const FCF_CLUB='https://www.fcf.cat/ca/clubs/3085';
 const FCF_TEAM='https://www.fcf.cat/ca/clubs/3085/categories/';
-const FIXTURES_UPDATED="2026-09-25";
+const FIXTURES_UPDATED="2026-09-26";
 
 /* Equips del club, de la categoria superior a la inferior.
    fcf = codi d'equip a la Federació Catalana de Futbol (per als enllaços). */
@@ -1046,16 +1046,16 @@ const MATCHES=[
   {catId:"primer",comp:"Segona Catalana · Jornada 2",home:"UD Salou",away:CLUB,date:"2026-09-26",time:"16:00",venue:"Salou"},
   {catId:"filial",comp:"Quarta Catalana · Jornada 2",home:"UD Jesus i Maria",away:CLUB,date:"2026-09-26",time:"18:30",venue:"L'aube"},
   {catId:"femeni",comp:"Preferent Femenina · Jornada 2",home:CLUB,away:"Pontenc Esp.",date:"2026-09-27",time:"16:30",venue:FIELD},
-  {catId:"femeniB",comp:"Segona Divisió · Jornada 1",home:CLUB,away:"Fundació P.e. la Pobla Mafumet",date:"2026-10-03",time:"19:00",venue:FIELD},
+  {catId:"femeniB",comp:"Segona Divisió · Jornada 1",home:CLUB,away:"Fundació P.e. la Pobla Mafumet",date:"2026-10-03",time:"17:00",venue:FIELD},
   {catId:"juvenil",comp:"Amistós",home:"CD Roquetenc",away:CLUB,date:"2026-09-26",time:"19:30",venue:"Zem Roquetes"},
   {catId:"cadet",comp:"Amistós",home:"SCER l'Ametlla de Mar",away:CLUB,date:"2026-09-26",time:"12:00",venue:"Camp Esports La Cala"},
-  {catId:"infantil",comp:"Primera Divisió · Jornada 1",home:CLUB,away:"CF Amposta",date:"2026-10-03",time:"12:00",venue:FIELD},
+  {catId:"infantil",comp:"Primera Divisió · Jornada 1",home:CLUB,away:"CF Amposta",date:"2026-10-03",time:"09:45",venue:FIELD},
   {catId:"infantil2",comp:"Segona Divisió · Jornada 1",home:"CD Ginestar",away:CLUB,date:"2026-10-04",time:"11:30",venue:"Ginestar"},
-  {catId:"alevi1",comp:"Primera Divisió · Jornada 1",home:CLUB,away:"CF Jesus Catalonia",date:"2026-10-03",time:"10:00",venue:FIELD},
+  {catId:"alevi1",comp:"Primera Divisió · Jornada 1",home:CLUB,away:"CF Jesus Catalonia",date:"2026-10-03",time:"11:30",venue:FIELD},
   {catId:"alevi2",comp:"Amistós",home:CLUB,away:"CD Roquetenc",date:"2026-09-27",time:"10:00",venue:FIELD},
   {catId:"alevi",comp:"Preferent · Jornada 2",home:"Vendrell CE",away:CLUB,date:"2026-09-27",time:"10:30",venue:"Club Esports Vendrell"},
   {catId:"alevi4",comp:"Amistós",home:CLUB,away:"CF Tortosa Ebre",date:"2026-09-27",time:"11:30",venue:FIELD},
-  {catId:"benjami",comp:"Primera Divisió · Jornada 1",home:"CF Terres de l'Ebre",away:CLUB,date:"2026-10-03",time:"10:00",venue:"Del Pla Barra F"}
+  {catId:"benjami",comp:"Primera Divisió · Jornada 1",home:"CF Terres de l'Ebre",away:CLUB,date:"2026-10-04",time:"10:00",venue:"Del Pla Barra F"}
 ];
 function catName(id){const t=TEAMS.find(x=>x.id===id);return t?t.name:id;}
 function fcfUrl(id){const t=TEAMS.find(x=>x.id===id);return t&&t.fcf?FCF_TEAM+t.fcf:FCF_CLUB;}
@@ -1905,7 +1905,7 @@ const T1_SQUAD=[
 ];
 const T1_INFO={camp:"Estadi Municipal la Uni\u00f3 \u00b7 l'Aldea",partits:"Diumenge \u00b7 12:00 h",entren:"Dimarts, dijous i divendres \u00b7 20:30 h",kit:"1a: samarreta groga i pantal\u00f3 blau \u00b7 2a: blau i blanc"};
 const T1_STAFF=[['Àlex Gallego','Primer entrenador'],['Bartolo Meca','Segon entrenador'],['Gerard Alsina','Preparador físic'],['Manolo Xarra','Delegat']];
-const T1_TABLE_UPDATED="2026-09-25";
+const T1_TABLE_UPDATED="2026-09-26";
 /* Segona Catalana · Grup 6 — dades de la FCF (competition/classificacio grupId 58161868).
    pj=partits jugats, g/e/p, gf/gc gols, pts punts. */
 const T1_TABLE=[
